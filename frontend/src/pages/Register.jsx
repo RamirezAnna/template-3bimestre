@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import api from "../services/api.js";
+import api, { getApiErrorMessage } from "../services/api.js";
 
 export default function Register() {
   const [name, setName] = useState("");
@@ -11,61 +11,50 @@ export default function Register() {
   const [loading, setLoading] = useState(false);
 
   async function handleRegister(event) {
-    // TODO: impedir o comportamento padrão do formulário.
-    event.preventDefault(); // Preparação mínima: a página não recarrega durante a aula.
-
-    // TODO: limpar mensagens anteriores de erro e sucesso.
+    event.preventDefault();
     setError("");
     setSuccess("");
 
-    // TODO: validar se name, email e password foram preenchidos.
-    if (!name || !email || !password) {
-      setError("Preencha todos os campos");
+    const normalizedName = name.trim();
+    const normalizedEmail = email.trim().toLowerCase();
+    if (!normalizedName || !normalizedEmail || !password) {
+      setError("Preencha todos os campos.");
+      return;
+    }
+    if (password.length < 6) {
+      setError("A senha deve ter pelo menos 6 caracteres.");
       return;
     }
 
     try {
-      // TODO: ativar loading.
       setLoading(true);
-
-      // TODO: chamar POST /auth/register usando api.post.
-      // TODO: enviar name, email e password no body.
-      await api.post("/auth/register", { name, email, password });
-
-      // TODO: mostrar mensagem de sucesso se o cadastro funcionar.
+      await api.post("/auth/register", {
+        name: normalizedName,
+        email: normalizedEmail,
+        password,
+      });
       setSuccess("Cadastro realizado com sucesso");
-      // TODO: limpar os campos após cadastro.
       setName("");
       setEmail("");
       setPassword("");
     } catch (error) {
-      // TODO: mostrar mensagem de erro se o backend retornar erro.
-      const message =
-        error.response?.data?.message || "Erro ao cadastrar usuário";
-
-      setError(message);
+      setError(getApiErrorMessage(error, "Não foi possível criar sua conta."));
     } finally {
-      // TODO: desativar loading no final.
       setLoading(false);
     }
-    // Dica: use try/catch/finally para separar sucesso, erro e loading.
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-gray-100 px-4 py-8">
-      <section className="w-full max-w-md rounded-xl bg-white p-6 shadow-md sm:p-8">
-        <h1 className="mb-6 text-center text-2xl font-bold text-gray-900">
-          Criar conta
-        </h1>
+    <main className="auth-shell">
+      <section className="auth-card">
+        <div className="brand-mark" aria-hidden="true">A</div>
+        <p className="eyebrow">Comece agora</p>
+        <h1 className="page-title">Crie sua conta</h1>
+        <p className="page-subtitle">Leva menos de um minuto para começar.</p>
 
         <form onSubmit={handleRegister} className="space-y-4">
-          <div>
-            <label
-              htmlFor="name"
-              className="mb-1 block text-sm font-medium text-gray-700"
-            >
-              Nome
-            </label>
+          <div className="field-group">
+            <label htmlFor="name">Nome</label>
             <input
               id="name"
               name="name"
@@ -73,16 +62,11 @@ export default function Register() {
               autoComplete="name"
               value={name}
               onChange={(event) => setName(event.target.value)}
-              className="w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 focus:border-blue-500 focus:outline-none"
+              placeholder="Como podemos chamar você?"
             />
           </div>
-          <div>
-            <label
-              htmlFor="email"
-              className="mb-1 block text-sm font-medium text-gray-700"
-            >
-              Email
-            </label>
+          <div className="field-group">
+            <label htmlFor="email">Email</label>
             <input
               id="email"
               name="email"
@@ -90,16 +74,11 @@ export default function Register() {
               autoComplete="email"
               value={email}
               onChange={(event) => setEmail(event.target.value)}
-              className="w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 focus:border-blue-500 focus:outline-none"
+              placeholder="voce@exemplo.com"
             />
           </div>
-          <div>
-            <label
-              htmlFor="password"
-              className="mb-1 block text-sm font-medium text-gray-700"
-            >
-              Senha
-            </label>
+          <div className="field-group">
+            <label htmlFor="password">Senha</label>
             <input
               id="password"
               name="password"
@@ -107,38 +86,24 @@ export default function Register() {
               autoComplete="new-password"
               value={password}
               onChange={(event) => setPassword(event.target.value)}
-              className="w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 focus:border-blue-500 focus:outline-none"
+              placeholder="Mínimo de 6 caracteres"
             />
           </div>
 
-          {error && (
-            <p role="alert" className="text-sm text-red-600">
-              {error}
-            </p>
-          )}
-          {success && (
-            <p role="status" className="text-sm text-green-600">
-              {success}
-            </p>
-          )}
+          {error && <p role="alert" className="feedback feedback-error">{error}</p>}
+          {success && <p role="status" className="feedback feedback-success">{success}</p>}
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full rounded-md bg-blue-600 px-4 py-2 font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+            className="primary-button"
           >
             {loading ? "Cadastrando..." : "Cadastrar"}
           </button>
         </form>
 
-        <p className="mt-5 text-center text-sm text-gray-600">
-          Já tem conta?{" "}
-          <Link
-            to="/login"
-            className="font-medium text-blue-600 hover:underline"
-          >
-            Entrar
-          </Link>
+        <p className="form-footer">
+          Já tem conta? <Link to="/login">Entrar</Link>
         </p>
       </section>
     </main>
